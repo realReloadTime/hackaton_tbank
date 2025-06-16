@@ -41,10 +41,18 @@ class Ticker(Base):
     __tablename__ = 'tickers'
 
     ticker_id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False, unique=True)  # наименование тикера
-    company = Column(String, nullable=False)  # название компании-эмитента
-    region_id = Column(Integer, ForeignKey('regions.region_id'))
-    region = relationship('Region', back_populates='tickers')
+    name = Column(String, nullable=False, unique=True)
+    company = Column(String, nullable=False)
+    regions = relationship('TickerRegion', back_populates='ticker')
+
+
+class TickerRegion(Base):
+    __tablename__ = 'ticker_regions'
+
+    ticker_id = Column(Integer, ForeignKey('tickers.ticker_id'), primary_key=True)
+    region_id = Column(Integer, ForeignKey('regions.region_id'), primary_key=True)
+    ticker = relationship('Ticker', back_populates='regions')
+    region = relationship('Region')
 
 
 # Вспомогательная таблица для связи многие-ко-многим между User и Ticker
