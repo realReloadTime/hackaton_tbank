@@ -1,5 +1,5 @@
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.api.schemas.region import RegionResponse
 
@@ -11,10 +11,13 @@ class TickerBase(BaseModel):
 
 class TickerResponse(TickerBase):
     ticker_id: int
-    regions: List[RegionResponse]
+    regions: List[RegionResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
+        json_encoders = {
+            'Ticker': lambda v: v.dict()
+        }
 
 
 class TickerCreateRequest(TickerBase):
@@ -24,7 +27,7 @@ class TickerCreateRequest(TickerBase):
 class UserTickersResponse(BaseModel):
     user_id: int
     username: str
-    tickers: List[TickerBase]
+    tickers: List[TickerResponse]
 
     class Config:
         from_attributes = True

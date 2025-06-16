@@ -9,23 +9,24 @@ from backend.api.database.db import Base
 
 # Перечисление для тональности новости
 class Tonality(PyEnum):
-    POSITIVE = "positive"
-    NEGATIVE = "negative"
-    NEUTRAL = "neutral"
+    POSITIVE = "POSITIVE"
+    NEGATIVE = "NEGATIVE"
+    NEUTRAL = "NEUTRAL"
 
 
 # Перечисление для значимости новости
 class ValueLevel(PyEnum):
-    LOW = 1  # незначительный
-    MEDIUM = 2  # значительный
-    HIGH = 3  # очень значимый
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
 
 
 class User(Base):
     __tablename__ = 'users'
 
     user_id = Column(Integer, primary_key=True)
-    username = Column(String, unique=True, nullable=False)  # ссылка на телеграм-профиль
+    username = Column(String, unique=True, nullable=False)
+    chat_id = Column(Integer, nullable=True)  # Добавляем chat_id для Telegram
     preferences = relationship('UserTicker', back_populates='user')
 
 
@@ -33,8 +34,14 @@ class Region(Base):
     __tablename__ = 'regions'
 
     region_id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False, unique=True)  # название области (нефть, золото, ИТ и т.п.)
-    tickers = relationship('Ticker', back_populates='region')
+    name = Column(String, nullable=False, unique=True)
+    # Изменяем связь, чтобы указывать на промежуточную таблицу
+    ticker_associations = relationship('TickerRegion', back_populates='region')
+
+    # Добавляем свойство для доступа к тикерам через ассоциации
+    @property
+    def tickers(self):
+        return [assoc.ticker for assoc in self.ticker_associations]
 
 
 class Ticker(Base):
@@ -43,7 +50,16 @@ class Ticker(Base):
     ticker_id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
     company = Column(String, nullable=False)
-    regions = relationship('TickerRegion', back_populates='ticker')
+    region_associations = relationship('TickerRegion', back_populates='ticker', lazy='selectin')
+
+    @property
+    def regions(self):
+        return [assoc.region for assoc in self.region_associations]
+
+    def dict(self, **kwargs):
+        data = super().dict(**kwargs)
+        data['regions'] = [region.dict() for region in self.regions]
+        return data
 
 
 class TickerRegion(Base):
@@ -51,8 +67,8 @@ class TickerRegion(Base):
 
     ticker_id = Column(Integer, ForeignKey('tickers.ticker_id'), primary_key=True)
     region_id = Column(Integer, ForeignKey('regions.region_id'), primary_key=True)
-    ticker = relationship('Ticker', back_populates='regions')
-    region = relationship('Region')
+    ticker = relationship('Ticker', back_populates='region_associations')
+    region = relationship('Region', back_populates='ticker_associations')
 
 
 # Вспомогательная таблица для связи многие-ко-многим между User и Ticker
@@ -71,7 +87,7 @@ class New(Base):
     new_id = Column(Integer, primary_key=True)
     text = Column(Text, nullable=False)  # полный текст новости
     tonality = Column(Enum(Tonality), nullable=False)  # тональность новости
-    value = Column(Enum(ValueLevel), nullable=False)  # уровень влияния
+    value = Column(Integer, nullable=False)  # уровень влияния
     created_at = Column(DateTime(timezone=True), server_default=func.now())  # время записи
 
     # Связь многие-ко-многим с Region через вспомогательную таблицу

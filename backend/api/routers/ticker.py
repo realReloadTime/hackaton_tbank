@@ -17,6 +17,7 @@ async def create_ticker(
         ticker_data: TickerCreateRequest,
         db: AsyncSession = Depends(get_db)
 ):
+    # Проверяем существование всех регионов вне транзакции
     regions = []
     for region_id in ticker_data.region_ids:
         region = (await db.execute(
@@ -29,6 +30,7 @@ async def create_ticker(
             )
         regions.append(region)
 
+    # Проверяем уникальность имени тикера
     existing_ticker = (await db.execute(
         select(Ticker).filter(Ticker.name == ticker_data.name)
     )).scalar_one_or_none()
@@ -39,23 +41,47 @@ async def create_ticker(
             detail="Ticker with this name already exists"
         )
 
-    new_ticker = Ticker(
-        name=ticker_data.name,
-        company=ticker_data.company
-    )
-    db.add(new_ticker)
-    await db.commit()
-    await db.refresh(new_ticker)
+    # Создаем тикер и связи в одной транзакции
+    try:
+        new_ticker = Ticker(
+            name=ticker_data.name,
+            company=ticker_data.company
+        )
+        db.add(new_ticker)
+        await db.flush()  # Получаем ID до коммита
 
-    for region in regions:
-        db.add(TickerRegion(
-            ticker_id=new_ticker.ticker_id,
-            region_id=region.region_id
-        ))
-    await db.commit()
-    await db.refresh(new_ticker)
+        # Добавляем связи с регионами
+        for region in regions:
+            db.add(TickerRegion(
+                ticker_id=new_ticker.ticker_id,
+                region_id=region.region_id
+            ))
 
-    return new_ticker
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating ticker: {str(e)}"
+        )
+
+    # Загружаем полные данные для ответа
+    ticker_with_regions = (await db.execute(
+        select(Ticker)
+        .options(selectinload(Ticker.region_associations).selectinload(TickerRegion.region))
+        .filter(Ticker.ticker_id == new_ticker.ticker_id)
+    )).scalar_one()
+
+    return ticker_with_regions
+
+    # Загружаем полные данные для ответа
+    ticker_with_regions = ((await db.execute(select(Ticker)
+                                            .options(selectinload(Ticker.region_associations)
+                                                     .selectinload(TickerRegion.region))
+                                            .filter(Ticker.ticker_id == new_ticker.ticker_id)))
+                           .scalar_one())
+
+    return ticker_with_regions
 
 
 @router.get("/", response_model=List[TickerResponse])
@@ -71,7 +97,7 @@ async def get_all_tickers(
     """
     result = await db.execute(
         select(Ticker)
-        .options(selectinload(Ticker.regions).selectinload(TickerRegion.region))
+        .options(selectinload(Ticker.region_associations).selectinload(TickerRegion.region))
         .offset(skip)
         .limit(limit)
     )

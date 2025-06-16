@@ -1,15 +1,15 @@
 from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-
 from sqlalchemy.future import select
+from sqlalchemy.sql import func
 
 from backend.api.database.db import Base, get_engine
 from backend.api.database.models import Region
-from backend.api.routers import user, ticker, region
-
+from backend.api.routers import user, ticker, region, new
 from backend.config import settings
 
 
@@ -21,8 +21,8 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
 
         # Проверяем, есть ли уже регионы в базе
-        regions_count = await conn.scalar(select(Region))
-        if regions_count is None or regions_count == 0:
+        regions_count = await conn.scalar(select(func.count()).select_from(Region))
+        if regions_count == 0:
             # Добавляем начальные данные
             initial_regions = [
                 {"name": "Нефть и газ"},
@@ -60,6 +60,7 @@ app.add_middleware(
 app.include_router(user.router)
 app.include_router(ticker.router)
 app.include_router(region.router)
+app.include_router(new.router)
 
 
 @app.get("/")

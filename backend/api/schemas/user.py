@@ -7,7 +7,7 @@ class UserBase(BaseModel):
 
 
 class UsernameRequest(UserBase):
-    pass
+    chat_id: int
 
 
 class UserTickerResponse(BaseModel):
@@ -20,6 +20,7 @@ class UserTickerResponse(BaseModel):
 
 class UserResponse(UserBase):
     user_id: int
+    chat_id: int
     preferences: Optional[List[UserTickerResponse]]
 
     class Config:
@@ -27,7 +28,7 @@ class UserResponse(UserBase):
 
 
 class AddPreferenceRequest(BaseModel):
-    user_id: int
+    username: str
     ticker_id: int
 
 
