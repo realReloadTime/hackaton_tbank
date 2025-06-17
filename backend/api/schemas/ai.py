@@ -1,10 +1,11 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class NewAIBase(BaseModel):
-    title: str
+    title: Optional[str]
     link: str
-    pubDate: str
+    pubDate: Optional[str]
     text: str
 
 

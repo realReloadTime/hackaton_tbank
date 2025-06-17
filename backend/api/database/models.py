@@ -85,7 +85,7 @@ class New(Base):
     __tablename__ = 'news'
 
     new_id = Column(Integer, primary_key=True)
-    text = Column(Text, nullable=False)  # полный текст новости
+    text = Column(Text, nullable=False, unique=True)  # полный текст новости
     tonality = Column(Enum(Tonality), nullable=False)  # тональность новости
     value = Column(Integer, nullable=False)  # уровень влияния
     created_at = Column(DateTime(timezone=True), server_default=func.now())  # время записи

@@ -2,6 +2,12 @@ from datetime import datetime, timedelta
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+
+import aiohttp
+import logging
+
+from backend.config import settings
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -15,6 +21,7 @@ from backend.api.schemas.new import (
 )
 
 router = APIRouter(prefix="/news", tags=["News"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/", response_model=List[UserNotification])
@@ -188,3 +195,16 @@ async def get_news_paginated(
     news = result.scalars().all()
 
     return news
+
+
+async def send_telegram_notifications(notifications: List[UserNotification]):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(
+                f"{settings.TELEGRAM_WEBHOOK_URL}/webhook",
+                json={"notifications": [n.dict() for n in notifications]}
+            ) as response:
+                if response.status != 200:
+                    logger.error(f"Failed to send Telegram notifications: {await response.text()}")
+        except Exception as e:
+            logger.error(f"Error sending Telegram notifications: {str(e)}")
