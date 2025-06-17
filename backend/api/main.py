@@ -9,7 +9,7 @@ from sqlalchemy.sql import func
 
 from backend.api.database.db import Base, get_engine
 from backend.api.database.models import Region
-from backend.api.routers import user, ticker, region, new
+from backend.api.routers import user, ticker, region, new, ai
 from backend.config import settings
 
 
@@ -61,6 +61,7 @@ app.include_router(user.router)
 app.include_router(ticker.router)
 app.include_router(region.router)
 app.include_router(new.router)
+app.include_router(ai.router)
 
 
 @app.get("/")
