@@ -18,7 +18,10 @@ from backend.config import settings
 from openai import AsyncOpenAI
 
 router = APIRouter(prefix="/ai", tags=["AI"])
-
+client = AsyncOpenAI(
+    base_url="http://127.0.0.1:1234/v1",
+    api_key="lm-studio"
+)
 
 @router.post("/new")
 async def parsed_new(request: NewRequest):
@@ -40,3 +43,29 @@ async def parsed_new(request: NewRequest):
 #   ]
 # }
 
+
+async def summarize_for_user(news_text: str) -> str:
+    response = await client.completions.create(
+        model="gigabateman-7b",
+        prompt=f"""
+        Ты финансовый аналитик. Создай краткое резюме новости предназначенного
+        для поддержки частных розничных трейдеров на российском фондовом рынке, 
+        в формате Утренний дайджест «финансовой газеты» по:
+        1)Ключевым тикерам [Example: SBER, LKOH];
+        2)Тональности: positive, neutral, negative
+        3) Уровень влияния:
+        1 - Низкое
+        2 - Среднее
+        3 - Очень высокое
+        4)К какой области инвестиций относится [Example: Нефть, Приролный газ, Золото, IT, Банк]
+
+        
+        Новость: {news_text}
+        
+        Резюме:
+        """,
+        max_tokens=300,
+        temperature=0.2,
+        stop=["\n\n"]
+    )
+    return response.choices[0].text.strip()
