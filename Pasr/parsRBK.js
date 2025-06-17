@@ -10,7 +10,7 @@ const processedLinks = new Set();
 const CHECK_INTERVAL_MS = 60 * 1000;
 
 // URL бэкенда для отправки данных
-const BACKEND_URL = 'http://your-backend.com/api/news'; // Замените на реальный URL
+const BACKEND_URL = 'http://localhost:8000/ai/new'; // http://your-backend.com/api/news Замените на реальный URL
 
 async function fetchNewsFromRSS() {
     try {

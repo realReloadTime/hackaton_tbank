@@ -50,7 +50,6 @@ async def parsed_new(request: NewRequest, db: AsyncSession = Depends(get_db)):
 # }
 
 async def analyze_new(new_total_text: str, regions: List[Dict[int, Any]]) -> Dict[str, Any]:
-    print(new_total_text,regions)
     """
     Отправляет текст новости в AI для классификации и возвращает словарь вида:
     {
