@@ -7,3 +7,5 @@ pydantic_settings
 asyncpg
 asyncio
 uvicorn
+openai
+uvicorn

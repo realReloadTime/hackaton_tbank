@@ -15,6 +15,8 @@ from backend.api.schemas.ai import NewRequest
 
 from backend.config import settings
 
+from openai import AsyncOpenAI
+
 router = APIRouter(prefix="/ai", tags=["AI"])
 
 
