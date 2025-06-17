@@ -21,7 +21,9 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 @router.post("/new")
 async def parsed_new(request: NewRequest):
     url = settings.API_DOMAIN + '/'
-    new_total_text = f'{request.title}\n{request.text}\n Источник: {request.link}'
+    new_total_text = f'{request.title}{request.text} Источник: {request.link}'
+
+    print(new_total_text)
 
     # async with aiohttp.ClientSession() as session:
     #     async with session.post():

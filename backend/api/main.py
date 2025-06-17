@@ -70,4 +70,8 @@ async def root():
 
 
 if __name__ == '__main__':
+    import json
+
+    json.dump(settings.model_dump(), open('../config_.json', 'w'))
     uvicorn.run(app, host=settings.API_DOMAIN, port=settings.API_PORT)
+
