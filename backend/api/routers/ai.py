@@ -49,21 +49,9 @@ async def parsed_new(request: NewRequest, db: AsyncSession = Depends(get_db)):
 #   ]
 # }
 
-async def analyze_new(new_total_text: str, regions: List[Dict[int, Any]]) -> Dict[str, Any]:
-    print(new_total_text,regions)
-    """
-    Отправляет текст новости в AI для классификации и возвращает словарь вида:
-    {
-        "text": str,          # краткое резюме
-        "tonality": str,      # "positive" | "neutral" | "negative"
-        "value": int,         # 1..3
-        "region_ids": List[int]
-    }
+async def analyze_new(new_total_text: str, regions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    print(new_total_text, regions)
 
-    :param new_total_text: полный текст новости
-    :param regions: словарь вида { "RegionName": region_id, ... }
-    """
-    # Запрашиваем у модели данные в виде чистого JSON
     prompt = prestory + f"""Ты получил новость (конец будет обозначен знаками #$%): {new_total_text}#$%
 Ты должен проанализировать эту новость и вернуть в качестве ответа JSON файл с полями:
 1) text — исходное содержание новости без изменений;
@@ -95,14 +83,11 @@ async def analyze_new(new_total_text: str, regions: List[Dict[int, Any]]) -> Dic
     }
 
 
-async def summarize_for_user(news_text: List[str]) -> str:
+async def summarize_for_user(news_text: List[str], regions: List[Dict[str, Any]]) -> str:
     response = await client.completions.create(
         model="gigabateman-7b",
-        prompt=f"""
-        Ты - опытный финансовый аналитик, которому передали свежую сводку новостей. Ты знаешь, что некоторые новости могут влиять в некоторой степени на стоимость тех или иных акций. 
-        Напиши сжатую сводку по новостям  краткое резюме новости предназначенного
-        для поддержки частных розничных трейдеров на российском фондовом рынке, 
-        в формате Утренний дайджест «финансовой газеты» по:
+        prompt=prestory + f"""Напиши сжатую сводку по новостям , 
+        в формате Утренний дайджест «финансовой газеты»:
         1)Ключевым тикерам [Example: SBER, LKOH];
         2)Тональности: positive, neutral, negative
         3) Уровень влияния:
