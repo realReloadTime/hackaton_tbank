@@ -24,7 +24,7 @@ services:
       - API_DOMAIN=0.0.0.0
       - API_PORT=8000
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-7867949246:AAFYbX8UvKQwLSsJbmLwepfZaAauzqHURuM}
-      - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL:-https://w7aa7t-176-59-144-238.ru.tuna.am}
+      - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL:-api.academus-pobeda.ru}
       - WEB_APP_URL=${WEB_APP_URL:-localhost}
 
 volumes:
