@@ -1,23 +1,14 @@
-from datetime import datetime, timedelta
-from typing import List
-
-from fastapi import APIRouter, Depends, HTTPException, status
-import aiohttp
-import asyncio
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
-
-from backend.api.database.db import get_db
-from backend.api.database.models import New, NewRegion, Region, User, UserTicker, Ticker, TickerRegion
-from backend.api.schemas.ai import NewRequest
-
-from backend.config import settings
 import json
 from typing import Dict, Any, List
 
+from fastapi import APIRouter, Depends
 from openai import AsyncOpenAI
+
+from backend.api.routers.region import get_all_regions
+from backend.api.schemas.ai import NewRequest
+from backend.api.schemas.region import RegionResponse
+from backend.config import settings
+from backend.api.database.db import get_db, AsyncSession
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 client = AsyncOpenAI(
@@ -25,17 +16,28 @@ client = AsyncOpenAI(
     api_key="lm-studio"
 )
 
+prestory = ('''Ты - опытный финансовый аналитик, которому передали свежую сводку новостей.
+Ты знаешь, что некоторые новости могут влиять в некоторой степени на стоимость тех или иных акций. 
+Твоя задача - оценивать влияние новостей.
+Лично ты в качестве параметров для анализа выделяешь 
+область влияния - region (на какую область новость может оказать влияние, например, "Нефть и газ"), 
+tonality новости (делится на POSITIVE, NEGATIVE, NEUTRAL), 
+value (важность новости по шкале от 1 до 3, 
+где 1 - незначительное влияние, 2 - значительное влияние, 3 - очень значимое влияние).''')
+
+
 @router.post("/new")
-async def parsed_new(request: NewRequest):
+async def parsed_new(request: NewRequest, db: AsyncSession = Depends(get_db)):
     url = settings.API_DOMAIN + '/'
-    new_total_text = f'{request.title}{request.text} Источник: {request.link}'
-
-    print(new_total_text)
-
-    print(new_total_text)
+    new_total_text = f'{request.title} {request.text} Источник: {request.link}'
+    regions = await get_all_regions(db)
+    regions = [RegionResponse.model_validate(region).model_dump() for region in regions]
+    ai_answer = await analyze_new(new_total_text, regions)
+    print(ai_answer)
 
     # async with aiohttp.ClientSession() as session:
     #     async with session.post():
+
 
 #   далее отправка запроса на AI с текстом new_total_text. Получаем ответ и направляем на POST news/ с параметрами
 # {
@@ -47,7 +49,8 @@ async def parsed_new(request: NewRequest):
 #   ]
 # }
 
-async def analyze_new(new_total_text: str, regions: Dict[str, int]) -> Dict[str, Any]:
+async def analyze_new(new_total_text: str, regions: List[Dict[int, Any]]) -> Dict[str, Any]:
+    print(new_total_text,regions)
     """
     Отправляет текст новости в AI для классификации и возвращает словарь вида:
     {
@@ -61,17 +64,15 @@ async def analyze_new(new_total_text: str, regions: Dict[str, int]) -> Dict[str,
     :param regions: словарь вида { "RegionName": region_id, ... }
     """
     # Запрашиваем у модели данные в виде чистого JSON
-    prompt = f"""
-Ты финансовый аналитик. Для следующей новости нужно в формате JSON вернуть:
-1) text — краткое резюме;
-2) tonality — одна из трёх строк: positive, neutral, negative;
-3) value — число от 1 (низкое), 2(среднее), 3(очень высокое);
-4) regions — список названий регионов (например [ "Нефть" , Приролный газ" , "Золото" , "IT" , "Банк" ]).
+    prompt = prestory + f"""Ты получил новость (конец будет обозначен знаками #$%): {new_total_text}#$%
+Ты должен проанализировать эту новость и вернуть в качестве ответа JSON файл с полями:
+1) text — исходное содержание новости без изменений;
+2) tonality — одна из трёх строк: POSITIVE, NEUTRAL, NEGATIVE;
+3) value — число от 1 до 3;
+4) regions — список id областей влияния из доступных: {regions}).
+Если новость не оказывает влияния на представленные области, верни пустой JSON.
 
-Новость:
-\"\"\"{new_total_text}\"\"\"
-
-Вывод(JSON):
+Твой ответ(JSON):
 """
     resp = await client.completions.create(
         model="gigabateman-7b",
@@ -86,25 +87,20 @@ async def analyze_new(new_total_text: str, regions: Dict[str, int]) -> Dict[str,
         parsed = json.loads(raw)
     except json.JSONDecodeError:
         raise ValueError(f"Не удалось распарсить JSON от AI:\n{raw}")
-
-    # мапим названия регионов на их ID
-    region_ids: List[int] = []
-    for name in parsed.get("regions", []):
-        rid = regions.get(name)
-        if rid is not None:
-            region_ids.append(rid)
     return {
         "text": parsed.get("text", ""),
         "tonality": parsed.get("tonality", "neutral"),
         "value": int(parsed.get("value", 1)),
-        "region_ids": region_ids
+        "region_ids": parsed.get('regions', [1])
     }
 
-async def summarize_for_user(news_text: str) -> str:
+
+async def summarize_for_user(news_text: List[str]) -> str:
     response = await client.completions.create(
         model="gigabateman-7b",
         prompt=f"""
-        Ты финансовый аналитик. Создай краткое резюме новости предназначенного
+        Ты - опытный финансовый аналитик, которому передали свежую сводку новостей. Ты знаешь, что некоторые новости могут влиять в некоторой степени на стоимость тех или иных акций. 
+        Напиши сжатую сводку по новостям  краткое резюме новости предназначенного
         для поддержки частных розничных трейдеров на российском фондовом рынке, 
         в формате Утренний дайджест «финансовой газеты» по:
         1)Ключевым тикерам [Example: SBER, LKOH];

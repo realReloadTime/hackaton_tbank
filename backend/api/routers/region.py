@@ -12,10 +12,11 @@ router = APIRouter(prefix="/regions", tags=["Region"])
 
 
 @router.get("/", response_model=List[RegionResponse])
-async def get_all_regions(db: AsyncSession = Depends(get_db)):
+async def get_all_regions(db: AsyncSession = Depends(get_db)) -> List[RegionResponse]:
     """
     Получить список всех областей (регионов) для тикеров
     """
     result = await db.execute(select(Region))
     regions = result.scalars().all()
+
     return regions
