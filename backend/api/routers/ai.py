@@ -5,8 +5,10 @@ from fastapi import APIRouter, Depends
 from openai import AsyncOpenAI
 
 from backend.api.routers.region import get_all_regions
+from backend.api.routers.new import create_new, get_morning_digest
 from backend.api.schemas.ai import NewRequest
 from backend.api.schemas.region import RegionResponse
+from backend.api.schemas.new import NewCreateRequest, NewResponse
 from backend.config import settings
 from backend.api.database.db import get_db, AsyncSession
 
@@ -28,26 +30,31 @@ value (важность новости по шкале от 1 до 3,
 
 @router.post("/new")
 async def parsed_new(request: NewRequest, db: AsyncSession = Depends(get_db)):
-    url = settings.API_DOMAIN + '/'
     new_total_text = f'{request.title} {request.text} Источник: {request.link}'
     regions = await get_all_regions(db)
     regions = [RegionResponse.model_validate(region).model_dump() for region in regions]
     ai_answer = await analyze_new(new_total_text, regions)
-    print(ai_answer)
+    if len(ai_answer["text"]) > 0:
+        result = await create_new(NewCreateRequest.model_validate(ai_answer), db)
+        return result
+    return {"detail": "No relevant news found"}
 
-    # async with aiohttp.ClientSession() as session:
-    #     async with session.post():
 
+@router.get("/morning-digest")
+async def digest_new(db: AsyncSession = Depends(get_db)):
+    new_texts = await get_morning_digest(db)
+    regions = await get_all_regions(db)
+    if not new_texts:
+        return None
 
-#   далее отправка запроса на AI с текстом new_total_text. Получаем ответ и направляем на POST news/ с параметрами
-# {
-#   "text": "string",
-#   "tonality": "POSITIVE",
-#   "value": 1,
-#   "region_ids": [
-#     0
-#   ]
-# }
+    regions = [RegionResponse.model_validate(region).model_dump() for region in regions]
+    new_texts = [NewResponse.model_validate(new).model_dump() for new in new_texts]
+    ai_answer = await summarize_for_user(new_texts, regions)
+    if not ai_answer:
+        return None
+
+    return {"text": ai_answer}
+
 
 async def analyze_new(new_total_text: str, regions: List[Dict[str, Any]]) -> Dict[str, Any]:
     print(new_total_text, regions)
@@ -83,26 +90,27 @@ async def analyze_new(new_total_text: str, regions: List[Dict[str, Any]]) -> Dic
     }
 
 
-async def summarize_for_user(news_text: List[str], regions: List[Dict[str, Any]]) -> str:
+async def summarize_for_user(new_texts: List[Dict], regions: List[Dict[str, Any]]) -> str:
     response = await client.completions.create(
         model="gigabateman-7b",
-        prompt=prestory + f"""Напиши сжатую сводку по новостям , 
-        в формате Утренний дайджест «финансовой газеты»:
-        1)Ключевым тикерам [Example: SBER, LKOH];
-        2)Тональности: positive, neutral, negative
-        3) Уровень влияния:
-        1 - Низкое
-        2 - Среднее
-        3 - Очень высокое
-        4)К какой области инвестиций относится [Example: Нефть, Приролный газ, Золото, IT, Банк]
+        prompt=prestory + f"""Тебе передали список JSON, в котором содержатся новости и их параметры. Напиши сжатую сводку по новостям, 
+        в формате "утренний дайджест финансовой газеты". Новости, которые ты получишь, произошли в промежутке с 7.00 утра вчерашнего дня до 7.00 утра текущего дня.
 
+        Новости: {new_texts}\n Области влияния (regions): {regions}. В конце текста напиши, насколько сильным было влияние на каждую из областей, id которых были в полученных тобой новостях.
         
-        Новость: {news_text}
+        В качеcтве ответа верни JSON с полями text (твоя сводка).
         
-        Резюме:
+        Твой ответ (JSON):
         """,
         max_tokens=300,
         temperature=0.2,
         stop=["\n\n"]
     )
-    return response.choices[0].text.strip()
+
+    raw = response.choices[0].text.strip()
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        raise ValueError(f"Не удалось распарсить JSON от AI:\n{raw}")
+
+    return parsed.get("text", "")

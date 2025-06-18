@@ -86,6 +86,10 @@ async def create_new(
                     "tonality": new_data.tonality
                 })
 
+    # 4. Отправляем уведомления через Telegram бота
+    if users_to_notify:
+        await send_telegram_notifications(users_to_notify)
+
     return users_to_notify
 
 
