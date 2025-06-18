@@ -4,7 +4,7 @@ from typing import Dict
 import aiohttp
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder, WebAppInfo
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -128,7 +128,7 @@ async def cmd_start(message: types.Message):
                         builder = InlineKeyboardBuilder()
                         builder.add(types.InlineKeyboardButton(
                             text="Открыть веб-приложение",
-                            url=settings.WEB_APP_URL
+                            web_app=types.WebAppInfo(url=settings.WEB_APP_URL)
                         ))
 
                         await message.answer(
@@ -140,7 +140,7 @@ async def cmd_start(message: types.Message):
                         builder = InlineKeyboardBuilder()
                         builder.add(types.InlineKeyboardButton(
                             text="Открыть веб-приложение",
-                            url=settings.WEB_APP_URL
+                            web_app=types.WebAppInfo(url=settings.WEB_APP_URL)
                         ))
                         await message.answer(
                             "Вы уже зарегистрированы! Можете настроить подписки в веб-приложении:",
