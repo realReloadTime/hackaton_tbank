@@ -15,7 +15,7 @@ from backend.api.database.db import get_db, AsyncSession
 router = APIRouter(prefix="/ai", tags=["AI"])
 
 # Используем официальный клиент Mistral
-MISTRAL_API_KEY = "JfSjIKgF2WRAVSLiYcB3ZOuEQF05Asjf"  # Или жестко: "JfSjIKgF2WRAVSLiYcB3ZOuEQF05Asjf"
+MISTRAL_API_KEY = settings.API_KEY_MISTRAL
 MISTRAL_MODEL = "mistral-large-latest"
 mistral = Mistral(api_key=MISTRAL_API_KEY)
 
