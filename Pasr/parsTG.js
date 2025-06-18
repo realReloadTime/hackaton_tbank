@@ -6,9 +6,9 @@ import { NewMessage } from "telegram/events/index.js";
 
 
 
-const apiId = 20160495;          // замените на свой api_id
-const apiHash = "7f58395ad01d6fff6b9b8c54a1426b34";    // замените на свой api_hash
-const stringSession = new StringSession(""); // если первый запуск — пустая строка
+const apiId = ;
+const apiHash = "";
+const stringSession = new StringSession("");
 
 (async () => {
   console.log("Starting client...");
