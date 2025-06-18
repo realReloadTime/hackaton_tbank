@@ -34,7 +34,7 @@ const loadNews = async () => {
 
   isLoading.value = true;
   try {
-    const response = await axios.get('http://нашдомен/news/', {
+    const response = await axios.get('http://api2.academus-pobeda.ru/news/', {
       params: {
         username: '@ТР ссылка',
         skip: skip.value,

@@ -111,7 +111,7 @@ async def cmd_start(message: types.Message):
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
-                    f"{settings.API_DOMAIN}/users/first_launch",
+                    f"{settings.API_DOMAIN}:{settings.API_PORT}/users/first_launch",
                     json={"username": username, "chat_id": chat_id},
                     timeout=5  # Таймаут 5 секунд
                 ) as response:
@@ -142,7 +142,7 @@ async def cmd_start(message: types.Message):
                         error_text = await response.text()
                         logger.error(f"API error: {error_text}")
                         await message.answer("Ошибка при регистрации. Попробуйте позже.")
-                        
+
             except aiohttp.ClientError as e:
                 logger.error(f"Connection error: {str(e)}")
                 await message.answer("Не удалось подключиться к серверу. Попробуйте позже.")

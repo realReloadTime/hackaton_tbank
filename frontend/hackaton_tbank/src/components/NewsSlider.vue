@@ -40,7 +40,7 @@ const router = useRouter();
 onMounted(async () => {
   try {
     console.log('Fetching news data...');
-    const response = await axios.get('http://your-backend/api/news', {
+    const response = await axios.get('https://api2.academus-pobeda.ru/news/top-3', {
       params: {
         username: props.userName, // Используем переданный username в запросе
       }
