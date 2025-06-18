@@ -38,7 +38,7 @@ const formatDate = (dateString) => {
 
 onMounted(async () => {
   try {
-    const response = await axios.get(`http://api2.academus-pobeda.ru/news/${route.params.id}`);
+    const response = await axios.get(`https://api2.academus-pobeda.ru/news/${route.params.id}`);
     news.value = response.data;
   } catch (error) {
     console.error('Ошибка при загрузке новости:', error);

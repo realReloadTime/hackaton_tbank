@@ -116,7 +116,7 @@ const loadTickers = async () => {
   if (isLoading.value) return;
   isLoading.value = true;
   try {
-    const response = await axios.get('http://api2.academus-pobeda.ru/tickers/', {
+    const response = await axios.get('https://api2.academus-pobeda.ru/tickers/', {
       params: { skip: skip.value, limit: limit.value }
     });
     availableTickers.value = skip.value === 0 ? response.data : [...availableTickers.value, ...response.data];
@@ -130,7 +130,7 @@ const loadTickers = async () => {
 
 const loadSelectedTickers = async () => {
   try {
-    const response = await axios.get(`http://api2.academus-pobeda.ru/users/${userName.value}/tickers`);
+    const response = await axios.get(`https://api2.academus-pobeda.ru/users/${userName.value}/tickers`);
     selectedTickers.value = response.data.tickers || [];
   } catch (error) {
     console.error('Ошибка при загрузке выбранных тикеров:', error);
@@ -139,7 +139,7 @@ const loadSelectedTickers = async () => {
 
 const addTicker = async (tickerId) => {
   try {
-    await axios.post('http://api2.academus-pobeda.ru/users/preferences/add', {
+    await axios.post('https://api2.academus-pobeda.ru/users/preferences/add', {
       username: userName.value,
       ticker_id: tickerId
     });
@@ -160,7 +160,7 @@ const addCustomTicker = async () => {
     tickerNameToSend = '$' + tickerNameToSend;
   }
   try {
-    const response = await axios.post('http://api2.academus-pobeda.ru/tickers', {
+    const response = await axios.post('https://api2.academus-pobeda.ru/tickers', {
       name: tickerNameToSend,
       company: newTickerCompany.value,
       region_ids: [selectedRegionId.value]

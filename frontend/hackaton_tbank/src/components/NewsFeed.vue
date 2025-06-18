@@ -28,15 +28,32 @@ const skip = ref(0);
 const limit = ref(10);
 const isLoading = ref(false);
 const feedContainer = ref(null);
+const userName = ref(''); // Реактивная переменная для хранения username
+
+
+const initTelegramWebApp = () => {
+  if (window.Telegram && window.Telegram.WebApp) {
+    const telegramData = window.Telegram.WebApp.initDataUnsafe;
+    if (telegramData && telegramData.user) {
+      userName.value = telegramData.user.username || 'User';
+    } else {
+      userName.value = 'User'; // Значение по умолчанию, если username отсутствует
+    }
+  } else {
+    userName.value = 'User'; // Значение по умолчанию для тестирования вне Telegram
+    console.warn('Telegram WebApp не обнаружен. Используется значение по умолчанию.');
+  }
+};
+
 
 const loadNews = async () => {
   if (isLoading.value) return;
 
   isLoading.value = true;
   try {
-    const response = await axios.get('http://api2.academus-pobeda.ru/news/', {
+    const response = await axios.get('https://api2.academus-pobeda.ru/news/', {
       params: {
-        username: '@ТР ссылка',
+        username: userName.value,
         skip: skip.value,
         limit: limit.value
       }
