@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
 
@@ -19,6 +20,13 @@ dp = Dispatcher()
 
 # Веб-приложение FastAPI для обработки вебхуков
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_headers=["*"],
+    allow_methods=["*"],
+)
 
 # Глобальная переменная для хранения состояния бота (можно заменить на Redis в продакшене)
 bot_data: Dict[str, Dict] = {}
