@@ -61,7 +61,7 @@ class Ticker(Base):
             "ticker_id": self.ticker_id,
             "name": self.name,
             "company": self.company,
-            "regions": [{"region_id": r.region_id, "name": r.name} for r in self.regions]
+            "regions": [{"region_id": r.region_id, "name": r.region.name} for r in self.region_associations]
         }
 
 

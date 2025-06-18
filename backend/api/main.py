@@ -41,36 +41,35 @@ async def lifespan(app: FastAPI):
         # Проверяем и добавляем тикеры, если их нет
         tickers_count = await conn.scalar(select(func.count()).select_from(Ticker))
         if tickers_count == 0:
-            # Получаем ID регионов
+            # Получаем регионы с их ID
             result = await conn.execute(select(Region))
-            regions = result.scalars().all()
-            region_ids = {region.name: region.region_id for region in regions}
+            regions = {region.name: region.region_id for region in result.scalars()}
 
             initial_tickers = [
                 {
-                    "name": "GAZP",
-                    "company": "Газпром",
-                    "region_ids": [region_ids["Нефть и газ"]]
+                    "name": "$GAZP",
+                    "company": "газпром",
+                    "region_ids": [regions["Нефть и газ"]]
                 },
                 {
-                    "name": "GMKN",
-                    "company": "Норильский никель",
-                    "region_ids": [region_ids["Металлы и добыча"]]
+                    "name": "$GMKN",
+                    "company": "норильский никель",
+                    "region_ids": [regions["Металлы и добыча"]]
                 },
                 {
-                    "name": "SBER",
-                    "company": "Сбербанк",
-                    "region_ids": [region_ids["Финансы и банки"]]
+                    "name": "$SBER",
+                    "company": "сбербанк",
+                    "region_ids": [regions["Финансы и банки"]]
                 },
                 {
-                    "name": "YNDX",
-                    "company": "Яндекс",
-                    "region_ids": [region_ids["Технологии"]]
+                    "name": "$YNDX",
+                    "company": "яндекс",
+                    "region_ids": [regions["Технологии"]]
                 },
                 {
-                    "name": "PHOR",
-                    "company": "ФосАгро",
-                    "region_ids": [region_ids["Здравоохранение"], region_ids["Потребительские товары"]]
+                    "name": "$PHOR",
+                    "company": "фосагро",
+                    "region_ids": [regions["Здравоохранение"], regions["Потребительские товары"]]
                 }
             ]
 
