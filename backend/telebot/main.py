@@ -109,27 +109,46 @@ async def cmd_start(message: types.Message):
 
         # Регистрируем пользователя через API
         async with aiohttp.ClientSession() as session:
-            async with session.post(
+            try:
+                async with session.post(
                     f"{settings.API_DOMAIN}/users/first_launch",
-                    json={"username": username, "chat_id": chat_id}
-            ) as response:
-                if response.status == 200:
-                    # Создаем клавиатуру с кнопкой
-                    builder = InlineKeyboardBuilder()
-                    builder.add(types.InlineKeyboardButton(
-                        text="Открыть веб-приложение",
-                        url=settings.WEB_APP_URL
-                    ))
+                    json={"username": username, "chat_id": chat_id},
+                    timeout=5  # Таймаут 5 секунд
+                ) as response:
+                    if response.status == 200:
+                        # Создаем клавиатуру с кнопкой
+                        builder = InlineKeyboardBuilder()
+                        builder.add(types.InlineKeyboardButton(
+                            text="Открыть веб-приложение",
+                            url=settings.WEB_APP_URL
+                        ))
 
-                    await message.answer(
-                        "Добро пожаловать в финансовый мониторинг!\n\n"
-                        "Вы можете настроить свои подписки в веб-приложении:",
-                        reply_markup=builder.as_markup()
-                    )
-                elif response.status == 208:
-                    await message.answer("Вы уже зарегистрированы в системе!")
-                else:
-                    await message.answer("Ошибка при регистрации. Попробуйте позже.")
+                        await message.answer(
+                            "Добро пожаловать в финансовый мониторинг!\n\n"
+                            "Вы можете настроить свои подписки и посмотреть новости в веб-приложении:",
+                            reply_markup=builder.as_markup()
+                        )
+                    elif response.status == 208:
+                        builder = InlineKeyboardBuilder()
+                        builder.add(types.InlineKeyboardButton(
+                            text="Открыть веб-приложение",
+                            url=settings.WEB_APP_URL
+                        ))
+                        await message.answer(
+                            "Вы уже зарегистрированы! Можете настроить подписки в веб-приложении:",
+                            reply_markup=builder.as_markup()
+                        )
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"API error: {error_text}")
+                        await message.answer("Ошибка при регистрации. Попробуйте позже.")
+                        
+            except aiohttp.ClientError as e:
+                logger.error(f"Connection error: {str(e)}")
+                await message.answer("Не удалось подключиться к серверу. Попробуйте позже.")
+            except Exception as e:
+                logger.error(f"Unexpected error: {str(e)}")
+                await message.answer("Произошла непредвиденная ошибка. Попробуйте позже.")
     except Exception as e:
         logger.error(f"Error in cmd_start: {str(e)}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")

@@ -56,10 +56,13 @@ class Ticker(Base):
     def regions(self):
         return [assoc.region for assoc in self.region_associations]
 
-    def dict(self, **kwargs):
-        data = super().dict(**kwargs)
-        data['regions'] = [region.dict() for region in self.regions]
-        return data
+    def to_dict(self):
+        return {
+            "ticker_id": self.ticker_id,
+            "name": self.name,
+            "company": self.company,
+            "regions": [{"region_id": r.region_id, "name": r.name} for r in self.regions]
+        }
 
 
 class TickerRegion(Base):
