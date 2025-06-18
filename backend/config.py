@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = 'postgresql+asyncpg://postgres:qah112@localhost:5432/hackaton_db'
+    DATABASE_URL: str = 'postgresql+asyncpg://hackaton_user:12345@localhost:5432/hackaton_db'
 
     API_DOMAIN: str = '127.0.0.1'
     API_PORT: int = 8000
