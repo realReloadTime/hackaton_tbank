@@ -8,7 +8,7 @@ from sqlalchemy.future import select
 from sqlalchemy.sql import func
 
 from backend.api.database.db import Base, get_engine
-from backend.api.database.models import Region
+from backend.api.database.models import Region, Ticker, TickerRegion
 from backend.api.routers import user, ticker, region, new, ai
 from backend.config import settings
 
@@ -20,10 +20,9 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-        # Проверяем, есть ли уже регионы в базе
+        # Проверяем и добавляем регионы, если их нет
         regions_count = await conn.scalar(select(func.count()).select_from(Region))
         if regions_count == 0:
-            # Добавляем начальные данные
             initial_regions = [
                 {"name": "Нефть и газ"},
                 {"name": "Металлы и добыча"},
@@ -39,12 +38,65 @@ async def lifespan(app: FastAPI):
             await conn.execute(Region.__table__.insert(), initial_regions)
             print("--> Added initial regions data")
 
+        # Проверяем и добавляем тикеры, если их нет
+        tickers_count = await conn.scalar(select(func.count()).select_from(Ticker))
+        if tickers_count == 0:
+            # Получаем ID регионов
+            result = await conn.execute(select(Region))
+            regions = result.scalars().all()
+            region_ids = {region.name: region.region_id for region in regions}
+
+            initial_tickers = [
+                {
+                    "name": "GAZP",
+                    "company": "Газпром",
+                    "region_ids": [region_ids["Нефть и газ"]]
+                },
+                {
+                    "name": "GMKN",
+                    "company": "Норильский никель",
+                    "region_ids": [region_ids["Металлы и добыча"]]
+                },
+                {
+                    "name": "SBER",
+                    "company": "Сбербанк",
+                    "region_ids": [region_ids["Финансы и банки"]]
+                },
+                {
+                    "name": "YNDX",
+                    "company": "Яндекс",
+                    "region_ids": [region_ids["Технологии"]]
+                },
+                {
+                    "name": "PHOR",
+                    "company": "ФосАгро",
+                    "region_ids": [region_ids["Здравоохранение"], region_ids["Потребительские товары"]]
+                }
+            ]
+
+            # Добавляем тикеры и их связи с регионами
+            for ticker_data in initial_tickers:
+                # Добавляем тикер
+                ticker_result = await conn.execute(
+                    Ticker.__table__.insert().values(
+                        name=ticker_data["name"],
+                        company=ticker_data["company"]
+                    )
+                )
+                ticker_id = ticker_result.inserted_primary_key[0]
+
+                # Добавляем связи с регионами
+                for region_id in ticker_data["region_ids"]:
+                    await conn.execute(
+                        TickerRegion.__table__.insert().values(
+                            ticker_id=ticker_id,
+                            region_id=region_id
+                        )
+                    )
+
+            print("--> Added initial tickers data")
+
     print("\n--> Database tables created")
-
-    async def cleanup():
-        await engine.dispose()
-
-    await cleanup()
     yield
 
 
