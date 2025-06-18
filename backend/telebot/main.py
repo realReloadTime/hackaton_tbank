@@ -119,7 +119,7 @@ async def cmd_start(message: types.Message):
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
-                    f"api2.academus-pobeda.ru/users/first_launch",
+                    f"https://api2.academus-pobeda.ru/users/first_launch",
                     json={"username": username, "chat_id": chat_id},
                     timeout=5  # Таймаут 5 секунд
                 ) as response:
