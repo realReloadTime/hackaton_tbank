@@ -78,6 +78,7 @@ const handleScroll = () => {
 };
 
 onMounted(async () => {
+  initTelegramWebApp();
   await loadNews();
   const container = feedContainer.value;
   if (container) {
