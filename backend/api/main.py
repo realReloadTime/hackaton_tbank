@@ -38,63 +38,6 @@ async def lifespan(app: FastAPI):
             await conn.execute(Region.__table__.insert(), initial_regions)
             print("--> Added initial regions data")
 
-        # Проверяем и добавляем тикеры, если их нет
-        tickers_count = await conn.scalar(select(func.count()).select_from(Ticker))
-        if tickers_count == 0:
-            # Получаем регионы с их ID
-            result = await conn.execute(select(Region))
-            regions = {region.name: region.region_id for region in result.scalars()}
-
-            initial_tickers = [
-                {
-                    "name": "$GAZP",
-                    "company": "газпром",
-                    "region_ids": [regions["Нефть и газ"]]
-                },
-                {
-                    "name": "$GMKN",
-                    "company": "норильский никель",
-                    "region_ids": [regions["Металлы и добыча"]]
-                },
-                {
-                    "name": "$SBER",
-                    "company": "сбербанк",
-                    "region_ids": [regions["Финансы и банки"]]
-                },
-                {
-                    "name": "$YNDX",
-                    "company": "яндекс",
-                    "region_ids": [regions["Технологии"]]
-                },
-                {
-                    "name": "$PHOR",
-                    "company": "фосагро",
-                    "region_ids": [regions["Здравоохранение"], regions["Потребительские товары"]]
-                }
-            ]
-
-            # Добавляем тикеры и их связи с регионами
-            for ticker_data in initial_tickers:
-                # Добавляем тикер
-                ticker_result = await conn.execute(
-                    Ticker.__table__.insert().values(
-                        name=ticker_data["name"],
-                        company=ticker_data["company"]
-                    )
-                )
-                ticker_id = ticker_result.inserted_primary_key[0]
-
-                # Добавляем связи с регионами
-                for region_id in ticker_data["region_ids"]:
-                    await conn.execute(
-                        TickerRegion.__table__.insert().values(
-                            ticker_id=ticker_id,
-                            region_id=region_id
-                        )
-                    )
-
-            print("--> Added initial tickers data")
-
     print("\n--> Database tables created")
     yield
 
