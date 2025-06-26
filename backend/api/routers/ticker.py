@@ -104,3 +104,14 @@ async def get_all_tickers(
     tickers = result.scalars().all()
 
     return tickers
+
+
+@router.get('/my')
+async def get_my_tickers(username: str,
+                         db: AsyncSession = Depends(get_db)):
+    user = (await db.execute(
+        select(User).filter(User.username == username)
+    )).scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")

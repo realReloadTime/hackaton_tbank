@@ -8,9 +8,9 @@
     <div v-for="(news, index) in newsItems" :key="index" class="news-item" @click="goToDetail(news.new_id)">
       <div class="news-content">
         <h2 class="news-item-title">Новость {{ index + 1 }}</h2>
-        <p class="news-item-text">мровырпшоворваоравсис прр бъ втмв в в в втмтлатиаотитилотимлвовольмурус иблоисво</p>
+        <p class="news-item-text">{{ news.text ? news.text.slice(0, 50) + (news.text.length > 50 ? '...' : '') : '' }}</p>
       </div>
-      <a href="#" class="news-link" @click.stop="goToDetail(news.new_id)">Подробнее <span>➡️</span></a>
+      <a href="#" class="news-link" @click.stop="goToDetail(news.new_id)">Подробнее <span><img src="@/assets/custom-span.png" alt="Custom Span" class="custom-span" /></span></a>
     </div>
     <div v-if="isLoading" class="loading">Загрузка...</div>
   </div>
@@ -21,6 +21,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import BurgerMenu from './BurgerMenu.vue';
+import { useUserStore } from '../stores/user'
 
 const newsItems = ref([]);
 const router = useRouter();
@@ -29,6 +30,7 @@ const limit = ref(10);
 const isLoading = ref(false);
 const feedContainer = ref(null);
 const userName = ref(''); // Реактивная переменная для хранения username
+const userStore = useUserStore();
 
 
 const initTelegramWebApp = () => {
@@ -53,7 +55,7 @@ const loadNews = async () => {
   try {
     const response = await axios.get('https://api2.academus-pobeda.ru/news/', {
       params: {
-        username: userName.value,
+        username: userStore.username,
         skip: skip.value,
         limit: limit.value
       }
@@ -138,7 +140,7 @@ const goToDetail = (newId) => {
 .news-item {
   background-color: #1a1a1a;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 0px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin-bottom: 16px;
   border: 2px solid #00f;

@@ -11,7 +11,7 @@ const parser = new Parser({
 
 const processedLinks = new Set();
 const CHECK_INTERVAL_MS = 60 * 1000; // 10 минут, можно менять
-const BACKEND_URL = 'http://your-backend.com/api/news'; // Заменить на реальный URL
+const BACKEND_URL = 'https://api2.academus-pobeda.ru/api/news'; // Заменить на реальный URL
 
 async function fetchNewsFromRSS() {
   try {

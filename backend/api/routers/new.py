@@ -125,12 +125,12 @@ async def get_top_3_news(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(New)
         .options(selectinload(New.regions).selectinload(NewRegion.region))
-        .filter(New.created_at >= yesterday_7am, New.created_at <= today_7am)
         .order_by(New.value.desc())
         .limit(3)
     )
-    news = result.scalars().all()
 
+    news = result.scalars().all()
+    # .filter(New.created_at >= yesterday_7am, New.created_at <= today_7am)
     return news
 
 

@@ -2,11 +2,11 @@
   <div class="news-detail-container">
     <div class="header">
       <button class="back-button" @click="goBack">←</button>
-      <button class="menu-button">☰</button>
+      <BurgerMenu />
     </div>
     <div class="news-detail-content" v-if="news">
-      <h1 class="news-detail-title">Новость {{ news.new_id }}</h1>
-      <p class="news-detail-text">{{ news.text }}</p>
+      <h1 class="news-detail-title">Новость</h1>
+      <p class="news-detail-text">{{ news.text.toString() }}</p>
       <p class="news-detail-meta" v-if="news.tonality">Тональность: {{ news.tonality }}</p>
       <div class="news-detail-footer">
         <p class="news-detail-meta">Создано: {{ formatDate(news.created_at) }}</p>
@@ -21,6 +21,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
+import BurgerMenu from './BurgerMenu.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -31,7 +32,7 @@ const formatDate = (dateString) => {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    hour: '2-digit',
+    hour: '2-digit'+4,
     minute: '2-digit'
   });
 };

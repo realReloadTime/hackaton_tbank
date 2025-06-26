@@ -28,29 +28,44 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import NewsSlider from './NewsSlider.vue';
 import BurgerMenu from './BurgerMenu.vue';
+import { useUserStore } from '../stores/user'
+import { ref, onMounted, watch } from 'vue';
 
 // Реактивная переменная для хранения username
-const userName = ref('');
-const router = useRouter();
 
-// Функция для получения данных из Telegram Web App
+const router = useRouter();
+const userStore = useUserStore();
+const userName = ref(userStore.username); // Инициализируем из хранилища
+
 const initTelegramWebApp = () => {
-  if (window.Telegram && window.Telegram.WebApp) {
-    const telegramData = window.Telegram.WebApp.initDataUnsafe;
-    if (telegramData && telegramData.user) {
-      userName.value = telegramData.user.username || 'User';
-    } else {
-      userName.value = 'User'; // Значение по умолчанию, если username отсутствует
+  // 1. Пробуем получить из Telegram WebApp
+  if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    const tgUsername = window.Telegram.WebApp.initDataUnsafe.user.username;
+    if (tgUsername) {
+      userStore.setUsername(tgUsername);
+      return;
     }
-  } else {
-    userName.value = 'User'; // Значение по умолчанию для тестирования вне Telegram
-    console.warn('Telegram WebApp не обнаружен. Используется значение по умолчанию.');
   }
+
+  // 2. Пробуем получить из URL (?start=username)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlUsername = urlParams.get('start');
+  if (urlUsername) {
+    userStore.setUsername(urlUsername);
+    return;
+  }
+
+  // 3. Если ничего не найдено, оставляем сохраненное значение
+  console.warn('Username не обнаружен. Используется сохраненное значение.');
 };
+
+// Обновляем реактивную переменную при изменении хранилища
+watch(() => userStore.username, (newVal) => {
+  userName.value = newVal;
+});
 
 // Проверка и обработка первого входа
 const handleFirstVisit = () => {

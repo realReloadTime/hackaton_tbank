@@ -56,6 +56,7 @@ import { ref, computed, onMounted, } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import BurgerMenu from './BurgerMenu.vue';
+import { useUserStore } from '../stores/user'
 
 const router = useRouter();
 const searchQuery = ref('');
@@ -69,6 +70,7 @@ const skip = ref(0);
 const limit = ref(5);
 const isLoading = ref(false);
 const userName = ref(''); // Реактивная переменная для хранения username
+const userStore = useUserStore();
 
 const filteredTickers = computed(() =>
   availableTickers.value.filter(ticker =>
@@ -130,7 +132,7 @@ const loadTickers = async () => {
 
 const loadSelectedTickers = async () => {
   try {
-    const response = await axios.get(`https://api2.academus-pobeda.ru/users/${userName.value}/tickers`);
+    const response = await axios.get(`https://api2.academus-pobeda.ru/users/${userStore.username}/tickers`);
     selectedTickers.value = response.data.tickers || [];
   } catch (error) {
     console.error('Ошибка при загрузке выбранных тикеров:', error);
@@ -139,8 +141,8 @@ const loadSelectedTickers = async () => {
 
 const addTicker = async (tickerId) => {
   try {
-    await axios.post('https://api2.academus-pobeda.ru/users/preferences/add', {
-      username: userName.value,
+    await axios.post('https://api2.academus-pobeda.ru/tickers/', {
+      username: userStore.username,
       ticker_id: tickerId
     });
     const ticker = availableTickers.value.find(t => t.ticker_id === tickerId);
@@ -186,7 +188,7 @@ const removeTicker = (tickerId) => {
 
 const savePreferences = async () => {
   try {
-    await axios.post(`http://localhost:8000/users/${userName.value}/tickers`, {
+    await axios.post(`https://api2.academus-pobeda.ru/users/${userStore.username}/tickers`, {
       tickers: selectedTickers.value.map(t => ({ ticker_id: t.ticker_id }))
     });
     console.log('Предпочтения сохранены');

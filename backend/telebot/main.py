@@ -128,7 +128,7 @@ async def cmd_start(message: types.Message):
                         builder = InlineKeyboardBuilder()
                         builder.add(types.InlineKeyboardButton(
                             text="Открыть веб-приложение",
-                            web_app=types.WebAppInfo(url=settings.WEB_APP_URL)
+                            web_app=types.WebAppInfo(url=f"{settings.WEB_APP_URL}?start={message.from_user.username}")
                         ))
 
                         await message.answer(
@@ -140,7 +140,7 @@ async def cmd_start(message: types.Message):
                         builder = InlineKeyboardBuilder()
                         builder.add(types.InlineKeyboardButton(
                             text="Открыть веб-приложение",
-                            web_app=types.WebAppInfo(url=settings.WEB_APP_URL)
+                            web_app=types.WebAppInfo(url=f"{settings.WEB_APP_URL}?start={message.from_user.username}")
                         ))
                         await message.answer(
                             "Вы уже зарегистрированы! Можете настроить подписки в веб-приложении:",

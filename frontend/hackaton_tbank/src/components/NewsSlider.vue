@@ -8,7 +8,7 @@
       <swiper-slide v-for="news in newsItems" :key="news.new_id">
         <div class="news-slide">
           <h4 class="news-slide-title">Новость {{ news.new_id }}</h4>
-          <p class="news-slide-text">{{ news.text }}</p>
+          <p class="news-slide-text">{{ news.text.toString() }}</p>
           <p v-if="news.tonality" class="news-slide-tonality">Тональность: {{ news.tonality }}</p>
           <p v-if="news.created_at" class="news-slide-date">Создано: {{ news.created_at }}</p>
           <div v-if="news.regions" class="news-slide-regions">
@@ -26,23 +26,26 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineProps } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import 'swiper/css';
 import 'swiper/css/pagination';
+import { useUserStore } from '../stores/user'
 
-const props = defineProps(['userName']);
+
 const newsItems = ref([]);
 const router = useRouter();
+const userStore = useUserStore();
+
 
 onMounted(async () => {
   try {
     console.log('Fetching news data...');
     const response = await axios.get('https://api2.academus-pobeda.ru/news/top-3', {
       params: {
-        username: props.userName, // Используем переданный username в запросе
+        username: userStore.username,
       }
     });
     newsItems.value = response.data;
